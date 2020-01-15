@@ -3,6 +3,7 @@ from shapely.geometry import Point, Polygon
 import shapefile
 import numpy as np
 import node
+import geopy.distance as distance
 
 drones = 5
 
@@ -42,7 +43,7 @@ for shape in list(sf.iterShapes()):
         #plt.plot(x_lon, y_lat)
 
 x_min, y_min, x_max, y_max = polygon.bounds
-
+print(polygon.length * 20)
 bitmap = []
 row = []
 x_range = np.arange(x_min, x_max, 0.0001)
@@ -90,26 +91,45 @@ for e,x in enumerate(bitmap):
         x_array.append(temp[0])
         y_array.append(temp[1])
 index = len(x_array)
+cal = []
 for i in range(0,len(poly_points)-1):
     result = filter(lambda x: (x <= poly_points[i][1] and x >= poly_points[i+1][1]) or (x >= poly_points[i][1] and x <= poly_points[i+1][1]), y_range)
     for line in result:
         pt = line_intersection((poly_points[i],poly_points[i+1]),((0,line),(x_max,line)))
+        cal.append(pt)
         x_array.insert(index, pt[0])
         y_array.insert(index, pt[1])
-lenght = len(x_array)
-part = lenght//drones
-start, end = 0, part
 
-clr = ['green', 'orange', 'cyan', 'red', 'coral', 'green', 'orange', 'cyan', 'red', 'coral']
-for i in range(0, drones):
-    if i == drones - 1:
-        x = x_array[start:-1]
-        y = y_array[start:-1]
-    else:
-        x = x_array[start:end]
-        y = y_array[start:end]
 
-    plt.plot(x, y, color=clr[i])
-    start = end - 1
-    end = end + part
+
+total_length = 0
+for i in range(0, len(x_array)-1):
+    total_length += distance.vincenty((x_array[i],y_array[i]), ((x_array[i+1],y_array[i+1]))).m
+
+part = total_length/drones
+print(part)
+clr = ['red', 'orange', 'cyan', 'green', 'coral'    ]
+
+x_array.reverse()
+y_array.reverse()
+
+i = 0;
+path_x = [x_array[i]]
+path_y = [y_array[i]]
+td = 0
+info = []
+clr = ['red','blue','cyan','coral','orange']
+for j in range(0, drones):
+    while td <= part and i < len(x_array)-1:
+        td += distance.vincenty((x_array[i],y_array[i]), ((x_array[i+1],y_array[i+1]))).m
+        i += 1
+        path_x.append(x_array[i])
+        path_y.append(y_array[i])
+    plt.plot(path_x, path_y,color=clr[j])
+    d = dict(drone=j+1, distance=td, color=clr[j])
+    path_y = [y_array[i]]
+    path_x = [x_array[i]]
+    info.append(d)
+    td = 0
 plt.show()
+[print(x) for x in info]

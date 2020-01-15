@@ -13,15 +13,11 @@ class Node:
         self.lang = lang
         self.state = state
 
-        try:
-            assert isinstance(self.lat, float_)
-            assert isinstance(self.lang, float_)
-            assert isinstance(self.lat, bool)
-        except AssertionError as ae:
-            print(ae)
-
     def get_state(self):
         return self.state
 
     def get_points(self):
         return [self.lat, self.lang]
+
+    def set_state(self, state):
+        self.state = state
